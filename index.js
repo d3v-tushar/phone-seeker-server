@@ -10,14 +10,17 @@ require('dotenv').config();
 app.use(cors());
 app.use(express.json());
 
-//DB_USER=phoneSeekerDB
-//DB_PASS=tushar2151
+// DB_USER=phoneSeekerDB
+// DB_PASS=tushar2151
+// PORT=4000
+// ACCESS_TOKEN=27cb39b961403972b0b938dcb5105160e3c4230b06756fcd98d28dd5918877476e496bbf70aeddbf9e0b65cb60cc64346c2bf9faf2583287c76dacf8d1d68224
 
 
 //MongoDB
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@learnph.159fxoq.mongodb.net/?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
+//Verify JWT Token
 const verifyJWT = (req, res, next) =>{
     const authHeader = req.headers.authorization;
     if(!authHeader){
@@ -27,7 +30,7 @@ const verifyJWT = (req, res, next) =>{
 
     jwt.verify(token, process.env.ACCESS_TOKEN, (error, decoded) =>{
         if(error){
-            return res.status(403).send({message: 'Forbidden Access'})
+            return res.status(403).send({message: 'Forbidden Access'});
         }
         req.decoded = decoded;
         next();
@@ -64,6 +67,10 @@ const run = async() =>{
 
         app.get('/bookings', verifyJWT, async(req, res) =>{
             const email = req.query.email;
+            const decodedEmail = req.decoded.email;
+            if(email !== decodedEmail){
+                return res.status(403).send({message: 'Forbidden Access'});
+            }
             const query = {email: email};
             const bookings = await bookingCollection.find(query).toArray();
             res.send(bookings);
@@ -86,12 +93,6 @@ const run = async() =>{
             res.status(403).send({message: 'Forbidden Access'});
         });
 
-        // app.get('/phones', async(req, res)=>{
-        //     const query = {};
-        //     const cursor = phonesCollection.find(query);
-        //     const phones = await cursor.toArray();
-        //     res.send(phones);
-        // })
     }
     finally{
         //client.close();
