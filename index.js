@@ -77,7 +77,19 @@ const run = async() =>{
         });
 
         app.get('/users', async(req, res) =>{
-            const query = {};
+            let query = {};
+            if(req.query.role){
+                query = {role: req.query.role}
+            }
+            else if(req.query.sellerEmail){
+                query = {email : req.query.email}
+            };
+            const users = await usersCollection.find(query).toArray();
+            res.send(users);
+        });
+
+        app.get('/users/verify', async(req, res) =>{
+            let query = {email: req.query.email}
             const users = await usersCollection.find(query).toArray();
             res.send(users);
         });
@@ -88,6 +100,21 @@ const run = async() =>{
             const user = await usersCollection.findOne(query);
             res.send({ isAdmin: user?.role === 'admin'});
         });
+
+        app.get('/users/seller/:email', async(req, res) =>{
+            const email = req.params.email;
+            const query = {email: email};
+            const user = await usersCollection.findOne(query);
+            res.send({ isSeller: user?.role === 'Seller'});
+        });
+
+        app.get('/users/buyer/:email', async(req, res) =>{
+            const email = req.params.email;
+            const query = {email: email};
+            const user = await usersCollection.findOne(query);
+            res.send({ isAdmin: user?.role === 'Buyer'});
+        });
+
 
         app.post('/users', async(req, res) =>{
             const user = req.body;
@@ -100,6 +127,13 @@ const run = async() =>{
             const user = req.body;
             const result = await phonesCollection.insertOne(user);
             res.send(result);
+        });
+
+        app.get('/phones', async(req, res) =>{
+            const seller = req.query.sellerName;
+            const query = {sellerName: seller};
+            const phones = await phonesCollection.find(query).toArray();
+            res.send(phones);
         });
 
         app.put('/users/admin/:id', verifyJWT, async(req, res) =>{
@@ -116,7 +150,7 @@ const run = async() =>{
             const options = {upsert: true};
             const updatedDoc = {
                 $set: {
-                    role: 'admin'
+                    verified: true
                 }
             };
             const result = await usersCollection.updateOne(filter, updatedDoc, options);
